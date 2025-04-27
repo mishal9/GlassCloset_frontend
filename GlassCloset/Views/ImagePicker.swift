@@ -10,11 +10,12 @@ import UIKit
 
 struct ImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
+    @Environment(\.presentationMode) var presentationMode
     
     class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-        var parent: ImagePicker
+        let parent: ImagePicker
         
-        init(parent: ImagePicker) {
+        init(_ parent: ImagePicker) {
             self.parent = parent
         }
         
@@ -22,16 +23,16 @@ struct ImagePicker: UIViewControllerRepresentable {
             if let image = info[.originalImage] as? UIImage {
                 parent.selectedImage = image
             }
-            picker.dismiss(animated: true)
+            parent.presentationMode.wrappedValue.dismiss()
         }
         
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            picker.dismiss(animated: true)
+            parent.presentationMode.wrappedValue.dismiss()
         }
     }
     
     func makeCoordinator() -> Coordinator {
-        return Coordinator(parent: self)
+        return Coordinator(self)
     }
     
     func makeUIViewController(context: Context) -> UIImagePickerController {

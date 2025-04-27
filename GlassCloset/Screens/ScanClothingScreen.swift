@@ -4,7 +4,7 @@ struct ScanClothingScreen: View {
     @StateObject private var viewModel = ScanClothingViewModel()
     @State private var capturedImage: UIImage? = nil
     @State private var showCamera = false  // Define the state for showing camera
-    @State private var showDetectionDetails = false
+    @State private var showAttributes = true
     
     var body: some View {
         ScrollView {
@@ -15,7 +15,7 @@ struct ScanClothingScreen: View {
                         .progressViewStyle(CircularProgressViewStyle())
                         .frame(height: 300)
                 } else if let savedImage = viewModel.savedImage {
-                    // The image will already have bounding boxes drawn on it
+                    // The image will be shown as captured
                     Image(uiImage: savedImage)
                         .resizable()
                         .scaledToFit()
@@ -29,36 +29,63 @@ struct ScanClothingScreen: View {
                         .cornerRadius(20)
                 }
                 
-                // Detection results summary
-                if !viewModel.detectedObjects.isEmpty {
+                // API Analysis results
+                if !viewModel.clothingAttributes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Detection Results")
-                            .font(.headline)
-                            .foregroundColor(.black)
-                        
-                        ForEach(viewModel.detectedObjects) { object in
-                            HStack {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 10, height: 10)
-                                
-                                Text(object.label)
-                                    .font(.subheadline)
-                                    .foregroundColor(.black)
-                                
-                                Spacer()
-                                
-                                Text("\(Int(object.confidence * 100))%")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
+                        HStack {
+                            Text("Clothing Analysis")
+                                .font(.headline)
+                                .foregroundColor(.black)
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                showAttributes.toggle()
+                            }) {
+                                Image(systemName: showAttributes ? "chevron.up" : "chevron.down")
+                                    .foregroundColor(.blue)
                             }
-                            .padding(.vertical, 4)
+                        }
+                        
+                        if showAttributes {
+                            Text(viewModel.clothingAttributes)
+                                .font(.subheadline)
+                                .foregroundColor(.black)
+                                .padding(.top, 4)
                         }
                     }
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
                     .shadow(radius: 2)
+                    .padding(.horizontal)
+                }
+                
+                // API Error message if any
+                if !viewModel.apiError.isEmpty {
+                    Text("Error: \(viewModel.apiError)")
+                        .font(.subheadline)
+                        .foregroundColor(.red)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                }
+                
+                // Loading indicator for API analysis
+                if viewModel.isAnalyzingWithAPI {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle())
+                        
+                        Text("Analyzing clothing attributes...")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .padding(.leading, 8)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
                     .padding(.horizontal)
                 }
                 
@@ -78,8 +105,8 @@ struct ScanClothingScreen: View {
                 }
                 .padding(.horizontal)
                 
-                // Recapture button (only show if we have results)
-                if !viewModel.detectedObjects.isEmpty {
+                // Recapture button (only show if we have attributes)
+                if !viewModel.clothingAttributes.isEmpty {
                     Button(action: {
                         captureClothing()
                     }) {
@@ -100,7 +127,7 @@ struct ScanClothingScreen: View {
                 viewModel.processCapturedImage(captured)
             }
         }) {
-            ImagePicker(selectedImage: $capturedImage)  // ImagePicker allows capturing the image
+            ImagePicker(selectedImage: $capturedImage)
         }
     }
 
@@ -109,4 +136,3 @@ struct ScanClothingScreen: View {
         showCamera = true
     }
 }
-
