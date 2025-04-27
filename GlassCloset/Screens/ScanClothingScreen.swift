@@ -5,6 +5,7 @@ struct ScanClothingScreen: View {
     @State private var capturedImage: UIImage? = nil
     @State private var showCamera = false  // Define the state for showing camera
     @State private var showAttributes = true
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         ScrollView {
@@ -14,28 +15,31 @@ struct ScanClothingScreen: View {
                     ProgressView("Processing clothing...")
                         .progressViewStyle(CircularProgressViewStyle())
                         .frame(height: 300)
+                        .glassBackground(cornerRadius: GlassDesignSystem.Radius.lg)
                 } else if let savedImage = viewModel.savedImage {
                     // The image will be shown as captured
                     Image(uiImage: savedImage)
                         .resizable()
                         .scaledToFit()
                         .frame(height: 300)
-                        .cornerRadius(20)
+                        .clipShape(RoundedRectangle(cornerRadius: GlassDesignSystem.Radius.lg, style: .continuous))
+                        .glassCard(cornerRadius: GlassDesignSystem.Radius.lg)
                 } else {
                     Text("Capture a clothing item!")
+                        .font(GlassDesignSystem.Typography.title3)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
                         .frame(height: 300)
                         .frame(maxWidth: .infinity)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(20)
+                        .glassBackground(cornerRadius: GlassDesignSystem.Radius.lg)
                 }
                 
                 // API Analysis results
                 if !viewModel.clothingAttributes.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: GlassDesignSystem.Spacing.sm) {
                         HStack {
                             Text("Clothing Analysis")
-                                .font(.headline)
-                                .foregroundColor(.black)
+                                .font(GlassDesignSystem.Typography.title3)
+                                .foregroundColor(GlassDesignSystem.Colors.textPrimary(in: colorScheme))
                             
                             Spacer()
                             
@@ -43,33 +47,30 @@ struct ScanClothingScreen: View {
                                 showAttributes.toggle()
                             }) {
                                 Image(systemName: showAttributes ? "chevron.up" : "chevron.down")
-                                    .foregroundColor(.blue)
+                                    .foregroundColor(GlassDesignSystem.Colors.primary(in: colorScheme))
                             }
                         }
                         
                         if showAttributes {
                             Text(viewModel.clothingAttributes)
-                                .font(.subheadline)
-                                .foregroundColor(.black)
-                                .padding(.top, 4)
+                                .font(GlassDesignSystem.Typography.bodyMedium)
+                                .foregroundColor(GlassDesignSystem.Colors.textSecondary(in: colorScheme))
+                                .padding(.top, GlassDesignSystem.Spacing.xs)
                         }
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    .shadow(radius: 2)
-                    .padding(.horizontal)
+                    .padding(GlassDesignSystem.Spacing.md)
+                    .glassCard(cornerRadius: GlassDesignSystem.Radius.lg)
+                    .padding(.horizontal, GlassDesignSystem.Spacing.md)
                 }
                 
                 // API Error message if any
                 if !viewModel.apiError.isEmpty {
                     Text("Error: \(viewModel.apiError)")
-                        .font(.subheadline)
-                        .foregroundColor(.red)
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .padding(.horizontal)
+                        .font(GlassDesignSystem.Typography.bodyMedium)
+                        .foregroundColor(GlassDesignSystem.Colors.error)
+                        .padding(GlassDesignSystem.Spacing.md)
+                        .glassBackground(cornerRadius: GlassDesignSystem.Radius.md)
+                        .padding(.horizontal, GlassDesignSystem.Spacing.md)
                 }
                 
                 // Loading indicator for API analysis
@@ -79,14 +80,13 @@ struct ScanClothingScreen: View {
                             .progressViewStyle(CircularProgressViewStyle())
                         
                         Text("Analyzing clothing attributes...")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .padding(.leading, 8)
+                            .font(GlassDesignSystem.Typography.bodyMedium)
+                            .foregroundColor(GlassDesignSystem.Colors.textTertiary(in: colorScheme))
+                            .padding(.leading, GlassDesignSystem.Spacing.sm)
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
+                    .padding(GlassDesignSystem.Spacing.md)
+                    .glassBackground(cornerRadius: GlassDesignSystem.Radius.md)
+                    .padding(.horizontal, GlassDesignSystem.Spacing.md)
                 }
                 
                 // Capture button
@@ -96,14 +96,13 @@ struct ScanClothingScreen: View {
                     HStack {
                         Image(systemName: "camera")
                         Text("Capture Clothing")
+                            .font(GlassDesignSystem.Typography.bodyMedium)
                     }
-                    .padding()
+                    .padding(GlassDesignSystem.Spacing.md)
                     .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
                 }
-                .padding(.horizontal)
+                .buttonStyle(PrimaryGlassButtonStyle())
+                .padding(.horizontal, GlassDesignSystem.Spacing.md)
                 
                 // Recapture button (only show if we have attributes)
                 if !viewModel.clothingAttributes.isEmpty {
@@ -111,13 +110,12 @@ struct ScanClothingScreen: View {
                         captureClothing()
                     }) {
                         Text("Recapture")
-                            .padding()
+                            .font(GlassDesignSystem.Typography.bodyMedium)
+                            .padding(GlassDesignSystem.Spacing.md)
                             .frame(maxWidth: .infinity)
-                            .background(Color.gray.opacity(0.2))
-                            .foregroundColor(.blue)
-                            .cornerRadius(12)
                     }
-                    .padding(.horizontal)
+                    .buttonStyle(GlassButtonStyle())
+                    .padding(.horizontal, GlassDesignSystem.Spacing.md)
                 }
             }
             .padding(.vertical)

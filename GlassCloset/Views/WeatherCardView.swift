@@ -11,56 +11,62 @@ struct WeatherCardView: View {
     var temperature: String = "24°C"
     var feelsLike: String = "Feels like 26°"
     var location: String = "London"
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .leading, spacing: GlassDesignSystem.Spacing.xs) {
+            HStack(alignment: .center, spacing: GlassDesignSystem.Spacing.md) {
                 Image(systemName: "cloud.sun.fill")
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(Color.yellow, Color.white)
+                    .foregroundStyle(Color.yellow, colorScheme == .dark ? Color.white : Color.white)
                     .font(.system(size: 30))
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: GlassDesignSystem.Spacing.xxs) {
                     Text(temperature)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
+                        .font(GlassDesignSystem.Typography.title3)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
                     Text(feelsLike)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(GlassDesignSystem.Typography.bodySmall)
+                        .foregroundColor(colorScheme == .dark ? .white.opacity(0.8) : .black.opacity(0.7))
                 }
                 
                 Spacer()
                 
                 Text(location)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.white)
+                    .font(GlassDesignSystem.Typography.bodyMedium)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
             }
-            .padding()
+            .padding(GlassDesignSystem.Spacing.md)
         }
-        .background(
-            GlassBackground()
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .white.opacity(0.1), radius: 10, x: 0, y: 4)
-        .padding(.horizontal)
+        .glassCard(cornerRadius: GlassDesignSystem.Radius.xl)
+        .floatingEffect(intensity: 0.5)
+        .padding(.horizontal, GlassDesignSystem.Spacing.md)
     }
-}
-
-struct GlassBackground: View {
-    var body: some View {
-        Color.white.opacity(0.1)
-            .background(.ultraThinMaterial)
-            .blur(radius: 10)
-    }
-}
-
-struct WeatherCardView_Previews: PreviewProvider {
-    static var previews: some View {
-        ZStack {
-            LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.purple.opacity(0.5)]),
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
-            WeatherCardView()
+    
+    // GlassBackground has been moved to its own file and enhanced with the design system
+    
+    struct WeatherCardView_Previews: PreviewProvider {
+        static var previews: some View {
+            Group {
+                // Light mode preview
+                ZStack {
+                    LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.3), Color.purple.opacity(0.3)]),
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
+                    WeatherCardView()
+                }
+                .previewDisplayName("Light Mode")
+                
+                // Dark mode preview
+                ZStack {
+                    LinearGradient(gradient: Gradient(colors: [Color.blue.opacity(0.5), Color.purple.opacity(0.5)]),
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
+                    WeatherCardView()
+                }
+                .environment(\.colorScheme, .dark)
+                .previewDisplayName("Dark Mode")
+            }
         }
     }
 }
