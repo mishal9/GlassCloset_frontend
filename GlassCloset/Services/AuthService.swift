@@ -37,14 +37,14 @@ class AuthService: ObservableObject {
             self.error = nil
         }
         
-        // Create URL with query parameters for login
-        var components = URLComponents(string: "\(baseURL)\(Constants.API.login)")
-        components?.queryItems = [
+        // Create URL with properly encoded query parameters for login
+        var urlComponents = URLComponents(string: "\(baseURL)\(Constants.API.login)")
+        urlComponents?.queryItems = [
             URLQueryItem(name: "email", value: email),
             URLQueryItem(name: "password", value: password)
         ]
         
-        guard let url = components?.url else {
+        guard let url = urlComponents?.url else {
             await MainActor.run {
                 self.error = "Invalid URL"
                 self.isLoading = false
@@ -52,6 +52,7 @@ class AuthService: ObservableObject {
             return false
         }
         
+        // Create request
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
@@ -106,14 +107,14 @@ class AuthService: ObservableObject {
             self.error = nil
         }
         
-        // Create URL with query parameters for signup
-        var components = URLComponents(string: "\(baseURL)\(Constants.API.signup)")
-        components?.queryItems = [
+        // Create URL with properly encoded query parameters for signup
+        var urlComponents = URLComponents(string: "\(baseURL)\(Constants.API.signup)")
+        urlComponents?.queryItems = [
             URLQueryItem(name: "email", value: email),
             URLQueryItem(name: "password", value: password)
         ]
         
-        guard let url = components?.url else {
+        guard let url = urlComponents?.url else {
             await MainActor.run {
                 self.error = "Invalid URL"
                 self.isLoading = false
@@ -121,6 +122,7 @@ class AuthService: ObservableObject {
             return false
         }
         
+        // Create request
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
