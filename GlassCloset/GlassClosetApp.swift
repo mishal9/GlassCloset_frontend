@@ -10,9 +10,17 @@ import SwiftData
 
 @main
 struct GlassClosetApp: App {
+    @StateObject private var authService = AuthService.shared
+    
     var body: some Scene {
         WindowGroup {
-            ScanClothingScreen()
+            if authService.isAuthenticated {
+                // Main app content
+                ScanClothingScreen()
+            } else {
+                // Authentication flow
+                LoginScreen()
+            }
         }
     }
 }

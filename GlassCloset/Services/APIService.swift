@@ -10,8 +10,8 @@ import UIKit
 
 class APIService {
     
-    // Base URL for the backend API
-    private let baseURL = "https://glasscloset-backend.onrender.com"
+    // Base URL for the backend API from Constants
+    private let baseURL = Constants.API.baseURL
     
     // Singleton instance
     static let shared = APIService()
@@ -20,10 +20,9 @@ class APIService {
     
     // MARK: - Authentication
     
-    // Get the authentication token (to be implemented)
+    // Get the authentication token from AuthService
     private func getAuthToken() -> String? {
-        // TODO: Implement proper auth token retrieval
-        return "dummy_token" // Placeholder - replace with actual token storage/retrieval
+        return AuthService.shared.getAuthToken()
     }
     
     // MARK: - Image Analysis
@@ -33,8 +32,8 @@ class APIService {
     ///   - image: The UIImage to analyze
     ///   - completion: Callback with the analysis result or error
     func analyzeImage(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
-        // Endpoint for image analysis
-        let endpoint = "/analyze-image"
+        // Endpoint for image analysis from Constants
+        let endpoint = Constants.API.analyzeImage
         guard let url = URL(string: baseURL + endpoint) else {
             completion(.failure(APIError.invalidURL))
             return
