@@ -15,8 +15,8 @@ struct GlassClosetApp: App {
     var body: some Scene {
         WindowGroup {
             if authService.isAuthenticated {
-                // Main app content
-                ScanClothingScreen()
+                // Main app content with tab navigation
+                MainTabView()
             } else {
                 // Authentication flow
                 LoginScreen()

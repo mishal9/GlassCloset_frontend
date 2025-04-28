@@ -22,7 +22,9 @@ class APIService {
     
     // Get the authentication token from AuthService
     private func getAuthToken() -> String? {
-        return AuthService.shared.getAuthToken()
+        let token = AuthService.shared.getAuthToken()
+        print("🔑 Using auth token: \(token ?? "nil")")
+        return token
     }
     
     // MARK: - Image Analysis
@@ -49,9 +51,16 @@ class APIService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
-        // Get auth token
+        // Get auth token and ensure it's included in the request
         if let token = getAuthToken() {
+            // For debugging purposes, log a shortened version of the token
+            let shortToken = token.count > 20 ? "\(token.prefix(10))...\(token.suffix(10))" : token
+            print("🔒 Added auth token to request: Bearer \(shortToken)")
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            print("⚠️ No auth token available for API request")
+            completion(.failure(APIError.authenticationRequired))
+            return
         }
         
         // Generate boundary string
@@ -125,13 +134,14 @@ struct AnalysisResponse: Codable {
 
 // MARK: - Error Types
 
-enum APIError: Error, LocalizedError {
+enum APIError: Error, LocalizedError, Equatable {
     case invalidURL
     case imageConversionFailed
     case invalidResponse
     case serverError(statusCode: Int)
     case noData
     case decodingFailed
+    case authenticationRequired
     
     var errorDescription: String? {
         switch self {
@@ -147,6 +157,25 @@ enum APIError: Error, LocalizedError {
             return "No data received from server"
         case .decodingFailed:
             return "Failed to decode response"
+        case .authenticationRequired:
+            return "Authentication required - please log in"
+        }
+    }
+    
+    // Implement Equatable conformance
+    static func == (lhs: APIError, rhs: APIError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidURL, .invalidURL),
+             (.imageConversionFailed, .imageConversionFailed),
+             (.invalidResponse, .invalidResponse),
+             (.noData, .noData),
+             (.decodingFailed, .decodingFailed),
+             (.authenticationRequired, .authenticationRequired):
+            return true
+        case (.serverError(let lhsCode), .serverError(let rhsCode)):
+            return lhsCode == rhsCode
+        default:
+            return false
         }
     }
 }

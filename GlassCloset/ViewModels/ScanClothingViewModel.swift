@@ -8,6 +8,10 @@ class ScanClothingViewModel: ObservableObject {
     @Published var savedImage: UIImage? = nil
     @Published var clothingAttributes: String = ""
     @Published var apiError: String = ""
+    @Published var needsAuthentication = false
+    
+    // Reference to auth service
+    private let authService = AuthService.shared
     
     // Track the original captured image for reference
     private var originalCapturedImage: UIImage? = nil
@@ -60,6 +64,16 @@ class ScanClothingViewModel: ObservableObject {
     
     /// Analyze the image using the backend API
     private func analyzeImageWithBackendAPI(_ image: UIImage) {
+        // Ensure user is authenticated before making API request
+        guard authService.isAuthenticated, authService.getAuthToken() != nil else {
+            DispatchQueue.main.async {
+                self.apiError = "Please log in to analyze clothing items"
+                self.isProcessing = false
+                self.needsAuthentication = true
+            }
+            return
+        }
+        
         DispatchQueue.main.async {
             self.isAnalyzingWithAPI = true
         }
@@ -76,6 +90,11 @@ class ScanClothingViewModel: ObservableObject {
                 case .failure(let error):
                     print("❌ API Analysis failed: \(error.localizedDescription)")
                     self.apiError = error.localizedDescription
+                    
+                    // Check if the error is authentication-related
+                    if let apiError = error as? APIError, apiError == .authenticationRequired {
+                        self.needsAuthentication = true
+                    }
                 }
             }
         }
