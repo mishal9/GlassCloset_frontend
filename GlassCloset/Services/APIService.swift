@@ -199,6 +199,82 @@ class APIService {
  
         task.resume()
     }
+    
+    // MARK: - Clothing Items
+    
+    /// Fetches all clothing items for the current logged-in user
+    /// - Parameter completion: Callback with the array of clothing items or error
+    func fetchUserClothingItems(completion: @escaping (Result<[ClothingItem], Error>) -> Void) {
+        // Endpoint for clothing items from Constants
+        let endpoint = Constants.API.clothingItems
+        guard let url = URL(string: baseURL + endpoint) else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+        
+        // Create request
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        // Get auth token and ensure it's included in the request
+        if let token = getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            print("⚠️ No auth token available for API request")
+            completion(.failure(APIError.authenticationRequired))
+            return
+        }
+        
+        // Check network connectivity first
+        guard isConnected else {
+            print("⚠️ No network connection available")
+            completion(.failure(APIError.noNetworkConnection))
+            return
+        }
+        
+        // Create and start the task
+        let task = session.dataTask(with: request) { data, response, error in
+            // Handle network error
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            // Check for HTTP status code
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(APIError.invalidResponse))
+                return
+            }
+            
+            // Check for successful status code
+            guard (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                return
+            }
+            
+            // Check for data
+            guard let data = data else {
+                completion(.failure(APIError.noData))
+                return
+            }
+            
+            // Parse the response
+            do {
+                // Try to parse as an array of ClothingItem
+                let clothingItems = try JSONDecoder().decode([ClothingItem].self, from: data)
+                completion(.success(clothingItems))
+                print("✅ Successfully fetched \(clothingItems.count) clothing items")
+            } catch {
+                print("JSON Decoding Error: \(error)")
+                // Try to get the raw response as string for debugging
+                let responseString = String(data: data, encoding: .utf8) ?? "Could not decode response"
+                print("Raw response: \(responseString)")
+                completion(.failure(APIError.decodingFailed))
+            }
+        }
+        
+        task.resume()
+    }
 }    
 
 // MARK: - Response Models

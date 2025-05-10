@@ -229,4 +229,59 @@ struct ClothingItem: Identifiable, Codable {
         
         return colorStr.isEmpty ? typeStr : "\(colorStr) \(typeStr)"
     }
+    
+    // Mock items for previews and testing
+    static var mockItems: [ClothingItem] = [
+        ClothingItem(
+            id: "1",
+            attributes: ClothingAttributes(
+                mainColors: ["Navy Blue"],
+                secondaryColors: ["White"],
+                garmentType: "Hoodie",
+                pattern: "Solid",
+                material: "Cotton",
+                style: "Casual",
+                season: "Fall",
+                occasion: "Casual",
+                fit: "Regular",
+                brand: "Nike"
+            ),
+            imageUrl: nil,
+            dateAdded: Date()
+        ),
+        ClothingItem(
+            id: "2",
+            attributes: ClothingAttributes(
+                mainColors: ["Black"],
+                secondaryColors: ["Red"],
+                garmentType: "T-Shirt",
+                pattern: "Graphic",
+                material: "Cotton",
+                style: "Casual",
+                season: "Summer",
+                occasion: "Casual",
+                fit: "Slim",
+                brand: "Adidas"
+            ),
+            imageUrl: nil,
+            dateAdded: Date().addingTimeInterval(-86400) // 1 day ago
+        ),
+        ClothingItem(
+            id: "3",
+            attributes: ClothingAttributes(
+                mainColors: ["Blue"],
+                secondaryColors: [],
+                garmentType: "Jeans",
+                pattern: "Solid",
+                material: "Denim",
+                style: "Casual",
+                season: "All Season",
+                occasion: "Casual",
+                fit: "Slim",
+                brand: "Levi's"
+            ),
+            imageUrl: nil,
+            dateAdded: Date().addingTimeInterval(-172800) // 2 days ago
+        )
+    ]
 }
