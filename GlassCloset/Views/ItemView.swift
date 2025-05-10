@@ -11,6 +11,8 @@ struct ItemView: View {
     let item: ClothingItem
     @Environment(\.colorScheme) private var colorScheme
     @State private var showDetails = false
+    @State private var showDeleteConfirmation = false
+    @StateObject private var viewModel = ClosetViewModel()
     
     // Computed property to handle null or empty garment type
     private var displayGarmentType: String {
@@ -25,6 +27,7 @@ struct ItemView: View {
         Button(action: {
             showDetails.toggle()
         }) {
+            // Using contextMenu for long-press delete option
             VStack(alignment: .leading, spacing: GlassDesignSystem.Spacing.sm) {
                 // Image with color overlay if no image is available
                 ZStack {
@@ -108,8 +111,35 @@ struct ItemView: View {
             .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
         .buttonStyle(PlainButtonStyle())
+        .contextMenu {
+            Button(role: .destructive, action: {
+                showDeleteConfirmation = true
+            }) {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .alert("Delete Item", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                deleteItem()
+            }
+        } message: {
+            Text("Are you sure you want to delete this item? This action cannot be undone.")
+        }
         .sheet(isPresented: $showDetails) {
-            ItemDetailView(item: item)
+            ItemDetailView(item: item, onDelete: {
+                deleteItem()
+            })
+        }
+    }
+    
+    // Function to handle item deletion
+    private func deleteItem() {
+        viewModel.deleteClothingItem(itemId: item.id) { success in
+            if success {
+                // Item was deleted successfully
+                // The view will be updated automatically through the ViewModel's published properties
+            }
         }
     }
     
@@ -138,8 +168,10 @@ struct ItemView: View {
 // Detail view shown when an item is tapped
 struct ItemDetailView: View {
     let item: ClothingItem
+    var onDelete: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.presentationMode) var presentationMode
+    @State private var showDeleteConfirmation = false
     
     // Computed property to handle null or empty garment type
     private var displayGarmentType: String {
@@ -275,7 +307,7 @@ struct ItemDetailView: View {
             .navigationTitle(displayGarmentType)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
                     }) {
@@ -283,6 +315,24 @@ struct ItemDetailView: View {
                             .foregroundColor(GlassDesignSystem.Colors.textSecondary(in: colorScheme))
                     }
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        showDeleteConfirmation = true
+                    }) {
+                        Image(systemName: "trash")
+                            .foregroundColor(Color.red)
+                    }
+                }
+            }
+            .alert("Delete Item", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    onDelete()
+                    presentationMode.wrappedValue.dismiss()
+                }
+            } message: {
+                Text("Are you sure you want to delete this item? This action cannot be undone.")
             }
         }
     }
@@ -325,4 +375,8 @@ struct ItemDetailView: View {
 
 #Preview {
     ItemView(item: ClothingItem.mockItems.first!)
+}
+
+#Preview {
+    ItemDetailView(item: ClothingItem.mockItems.first!, onDelete: {})
 }

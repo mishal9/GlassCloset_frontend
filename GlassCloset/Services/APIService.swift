@@ -307,7 +307,89 @@ class APIService {
         
         task.resume()
     }
-}    
+    
+    /// Deletes a clothing item with the specified ID
+    /// - Parameters:
+    ///   - itemId: The ID of the clothing item to delete
+    ///   - completion: Callback with success or error
+    func deleteClothingItem(itemId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+        // Endpoint for deleting a clothing item
+        let endpoint = Constants.API.clothingItems + "/\(itemId)"
+        guard let url = URL(string: baseURL + endpoint) else {
+            completion(.failure(APIError.invalidURL))
+            return
+        }
+        
+        // Create request
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        
+        // Get auth token and ensure it's included in the request
+        if let token = getAuthToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            print("⚠️ No auth token available for API request")
+            completion(.failure(APIError.authenticationRequired))
+            return
+        }
+        
+        // Check network connectivity first
+        guard isConnected else {
+            print("⚠️ No network connection available")
+            completion(.failure(APIError.noNetworkConnection))
+            return
+        }
+        
+        // Create and start the task
+        let task = session.dataTask(with: request) { data, response, error in
+            // Handle network error
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            // Check for HTTP status code
+            guard let httpResponse = response as? HTTPURLResponse else {
+                completion(.failure(APIError.invalidResponse))
+                return
+            }
+            
+            // Check for successful status code
+            guard (200...299).contains(httpResponse.statusCode) else {
+                completion(.failure(APIError.serverError(statusCode: httpResponse.statusCode)))
+                return
+            }
+            
+            // Check for data
+            guard let data = data else {
+                completion(.failure(APIError.noData))
+                return
+            }
+            
+            // Parse the response
+            do {
+                // Try to parse the response
+                let deleteResponse = try JSONDecoder().decode(DeleteResponse.self, from: data)
+                if deleteResponse.success {
+                    print("✅ Successfully deleted clothing item: \(itemId)")
+                    print("📝 Message: \(deleteResponse.message)")
+                    completion(.success(true))
+                } else {
+                    print("❌ Failed to delete clothing item: \(itemId)")
+                    print("📝 Message: \(deleteResponse.message)")
+                    completion(.failure(APIError.operationFailed(message: deleteResponse.message)))
+                }
+            } catch {
+                print("Error decoding delete response: \(error)")
+                let responseString = String(data: data, encoding: .utf8) ?? "Could not decode response"
+                print("Raw response: \(responseString)")
+                completion(.failure(APIError.decodingFailed))
+            }
+        }
+        
+        task.resume()
+    }
+}
 
 // MARK: - Response Models
 
@@ -325,6 +407,12 @@ struct AnalysisResponse: Codable {
     }
 }
 
+// Response for delete operations
+struct DeleteResponse: Codable {
+    let success: Bool
+    let message: String
+}
+
 // MARK: - Error Types
 
 enum APIError: Error, LocalizedError, Equatable {
@@ -336,6 +424,7 @@ enum APIError: Error, LocalizedError, Equatable {
     case decodingFailed
     case authenticationRequired
     case noNetworkConnection
+    case operationFailed(message: String)
     
     var errorDescription: String? {
         switch self {
@@ -355,6 +444,8 @@ enum APIError: Error, LocalizedError, Equatable {
             return "Authentication required - please log in"
         case .noNetworkConnection:
             return "No network connection available"
+        case .operationFailed(let message):
+            return "Operation failed: \(message)"
         }
     }
     
@@ -371,6 +462,8 @@ enum APIError: Error, LocalizedError, Equatable {
             return true
         case (.serverError(let lhsCode), .serverError(let rhsCode)):
             return lhsCode == rhsCode
+        case (.operationFailed(let lhsMessage), .operationFailed(let rhsMessage)):
+            return lhsMessage == rhsMessage
         default:
             return false
         }

@@ -141,4 +141,28 @@ class ClosetViewModel: ObservableObject {
     func sortedByDateAdded(_ items: [ClothingItem]) -> [ClothingItem] {
         return items.sorted { $0.dateAdded > $1.dateAdded }
     }
+    
+    /// Deletes a clothing item by its ID
+    func deleteClothingItem(itemId: String, completion: @escaping (Bool) -> Void) {
+        isLoading = true
+        errorMessage = nil
+        
+        apiService.deleteClothingItem(itemId: itemId) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+                
+                switch result {
+                case .success(_):
+                    // Remove the item from the local arrays
+                    self?.clothingItems.removeAll { $0.id == itemId }
+                    print("📱 Successfully deleted clothing item with ID: \(itemId)")
+                    completion(true)
+                case .failure(let error):
+                    self?.errorMessage = "Failed to delete item: \(error.localizedDescription)"
+                    print("❌ Error deleting clothing item: \(error)")
+                    completion(false)
+                }
+            }
+        }
+    }
 }
