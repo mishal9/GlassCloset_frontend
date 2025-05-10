@@ -4,6 +4,10 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>GlassCloset needs camera access to scan and analyze your clothing items</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>GlassCloset needs your location to provide weather-based outfit recommendations</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>GlassCloset needs your location to provide weather-based outfit recommendations</string>
 	<key>LSBundleContainsCoreMLmlmodelc</key>
 	<true/>
 	<key>UIBackgroundModes</key>
