@@ -9,7 +9,7 @@ import Foundation
 
 struct Constants {
     struct API {
-        static let baseURL = "http://192.168.1.187:8000"
+        static let baseURL = "https://glasscloset-backend.onrender.com"
 
         // Endpoints
         static let login = "/login"
