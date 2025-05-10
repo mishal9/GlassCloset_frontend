@@ -10,9 +10,9 @@ import SwiftUI
 struct ItemView: View {
     let item: ClothingItem
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject var viewModel: ClosetViewModel
     @State private var showDetails = false
     @State private var showDeleteConfirmation = false
-    @StateObject private var viewModel = ClosetViewModel()
     
     // Computed property to handle null or empty garment type
     private var displayGarmentType: String {
@@ -130,6 +130,7 @@ struct ItemView: View {
             ItemDetailView(item: item, onDelete: {
                 deleteItem()
             })
+            .environmentObject(viewModel)
         }
     }
     
@@ -171,6 +172,7 @@ struct ItemDetailView: View {
     var onDelete: () -> Void
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var viewModel: ClosetViewModel
     @State private var showDeleteConfirmation = false
     
     // Computed property to handle null or empty garment type

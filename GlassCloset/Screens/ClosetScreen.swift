@@ -198,6 +198,7 @@ struct ClosetScreen: View {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: GlassDesignSystem.Spacing.md) {
                             ForEach(viewModel.sortedByDateAdded(viewModel.filteredItems)) { item in
                                 ItemView(item: item)
+                                    .environmentObject(viewModel)
                             }
                         }
                         .padding(GlassDesignSystem.Spacing.md)
