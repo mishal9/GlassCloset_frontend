@@ -12,6 +12,15 @@ struct ItemView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showDetails = false
     
+    // Computed property to handle null or empty garment type
+    private var displayGarmentType: String {
+        let garmentType = item.attributes.garmentType
+        if garmentType.isEmpty || garmentType == "null" || garmentType == "Not detected" {
+            return "Item"
+        }
+        return garmentType.capitalized
+    }
+    
     var body: some View {
         Button(action: {
             showDetails.toggle()
@@ -46,7 +55,7 @@ struct ItemView: View {
                     VStack {
                         Spacer()
                         HStack {
-                            Text(item.attributes.garmentType.capitalized)
+                            Text(displayGarmentType)
                                 .font(GlassDesignSystem.Typography.caption)
                                 .foregroundColor(.white)
                                 .padding(.horizontal, GlassDesignSystem.Spacing.sm)
@@ -131,6 +140,15 @@ struct ItemDetailView: View {
     let item: ClothingItem
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.presentationMode) var presentationMode
+    
+    // Computed property to handle null or empty garment type
+    private var displayGarmentType: String {
+        let garmentType = item.attributes.garmentType
+        if garmentType.isEmpty || garmentType == "null" || garmentType == "Not detected" {
+            return "Item"
+        }
+        return garmentType.capitalized
+    }
     
     var body: some View {
         NavigationStack {
@@ -254,7 +272,7 @@ struct ItemDetailView: View {
                 }
                 .padding(.bottom, GlassDesignSystem.Spacing.xl)
             }
-            .navigationTitle(item.attributes.garmentType.capitalized)
+            .navigationTitle(displayGarmentType)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

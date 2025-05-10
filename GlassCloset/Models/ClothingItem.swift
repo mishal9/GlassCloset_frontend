@@ -64,20 +64,154 @@ struct ClothingAttributes: Codable {
         self.imageUrl = imageUrl
     }
     
+    // Custom init from decoder to handle null values and other edge cases
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle arrays with proper error handling
+        do {
+            // First try to decode as an array of strings
+            mainColors = try container.decode([String].self, forKey: .mainColors)
+        } catch {
+            print("Error decoding mainColors as array: \(error)")
+            // If that fails, try to decode as a single string and convert to array
+            do {
+                if let colorString = try? container.decodeIfPresent(String.self, forKey: .mainColors) {
+                    mainColors = [colorString]
+                } else {
+                    mainColors = []
+                }
+            } catch {
+                print("Error decoding mainColors as string: \(error)")
+                mainColors = []
+            }
+        }
+        
+        do {
+            secondaryColors = try container.decode([String].self, forKey: .secondaryColors)
+        } catch {
+            print("Error decoding secondaryColors: \(error)")
+            // If that fails, try to decode as a single string and convert to array
+            do {
+                if let colorString = try? container.decodeIfPresent(String.self, forKey: .secondaryColors) {
+                    secondaryColors = [colorString]
+                } else {
+                    secondaryColors = []
+                }
+            } catch {
+                print("Error decoding secondaryColors as string: \(error)")
+                secondaryColors = []
+            }
+        }
+        
+        // Handle strings with proper null handling
+        do {
+            if let garmentTypeValue = try? container.decodeIfPresent(String.self, forKey: .garmentType) {
+                garmentType = garmentTypeValue == "null" ? "" : garmentTypeValue
+            } else {
+                garmentType = ""
+            }
+        } catch {
+            print("Error decoding garmentType: \(error)")
+            garmentType = ""
+        }
+        
+        do {
+            if let patternValue = try? container.decodeIfPresent(String.self, forKey: .pattern) {
+                pattern = patternValue == "null" ? "" : patternValue
+            } else {
+                pattern = ""
+            }
+        } catch {
+            print("Error decoding pattern: \(error)")
+            pattern = ""
+        }
+        
+        do {
+            if let materialValue = try? container.decodeIfPresent(String.self, forKey: .material) {
+                material = materialValue == "null" ? "" : materialValue
+            } else {
+                material = ""
+            }
+        } catch {
+            print("Error decoding material: \(error)")
+            material = ""
+        }
+        
+        do {
+            if let styleValue = try? container.decodeIfPresent(String.self, forKey: .style) {
+                style = styleValue == "null" ? "" : styleValue
+            } else {
+                style = ""
+            }
+        } catch {
+            print("Error decoding style: \(error)")
+            style = ""
+        }
+        
+        do {
+            if let seasonValue = try? container.decodeIfPresent(String.self, forKey: .season) {
+                season = seasonValue == "null" ? "" : seasonValue
+            } else {
+                season = ""
+            }
+        } catch {
+            print("Error decoding season: \(error)")
+            season = ""
+        }
+        
+        do {
+            if let occasionValue = try? container.decodeIfPresent(String.self, forKey: .occasion) {
+                occasion = occasionValue == "null" ? "" : occasionValue
+            } else {
+                occasion = ""
+            }
+        } catch {
+            print("Error decoding occasion: \(error)")
+            occasion = ""
+        }
+        
+        do {
+            if let fitValue = try? container.decodeIfPresent(String.self, forKey: .fit) {
+                fit = fitValue == "null" ? "" : fitValue
+            } else {
+                fit = ""
+            }
+        } catch {
+            print("Error decoding fit: \(error)")
+            fit = ""
+        }
+        
+        do {
+            if let brandValue = try? container.decodeIfPresent(String.self, forKey: .brand) {
+                brand = brandValue == "null" ? "" : brandValue
+            } else {
+                brand = ""
+            }
+        } catch {
+            print("Error decoding brand: \(error)")
+            brand = ""
+        }
+        
+        // Optional fields
+        id = nil
+        imageUrl = nil
+    }
+    
     /// Returns true if essential attributes are empty
     var isEmpty: Bool {
         return mainColors.isEmpty && 
-               garmentType.isEmpty && 
-               material.isEmpty && 
-               pattern.isEmpty && 
-               style.isEmpty
+               (garmentType.isEmpty || garmentType == "null" || garmentType == "Not detected") && 
+               (material.isEmpty || material == "null" || material == "Not detected") && 
+               (pattern.isEmpty || pattern == "null" || pattern == "Not detected") && 
+               (style.isEmpty || style == "null" || style == "Not detected")
     }
     
     /// Returns a formatted string representation of the attributes
     var formattedString: String {
         var result = ""
         
-        if !garmentType.isEmpty {
+        if !garmentType.isEmpty && garmentType != "null" && garmentType != "Not detected" {
             result += "Type: \(garmentType.capitalized)\n"
         }
         
@@ -86,36 +220,36 @@ struct ClothingAttributes: Codable {
             result += "Main Colors: \(colorsList)\n"
         }
         
-        if !secondaryColors.isEmpty && secondaryColors.first != "Not detected" {
+        if !secondaryColors.isEmpty && secondaryColors.first != "Not detected" && secondaryColors.first != "null" {
             let colorsList = secondaryColors.map { $0.capitalized }.joined(separator: ", ")
             result += "Accent Colors: \(colorsList)\n"
         }
         
-        if !material.isEmpty && material != "Not detected" {
+        if !material.isEmpty && material != "Not detected" && material != "null" {
             result += "Material: \(material.capitalized)\n"
         }
         
-        if !pattern.isEmpty && pattern != "Not detected" {
+        if !pattern.isEmpty && pattern != "Not detected" && pattern != "null" {
             result += "Pattern: \(pattern.capitalized)\n"
         }
         
-        if !style.isEmpty && style != "Not detected" {
+        if !style.isEmpty && style != "Not detected" && style != "null" {
             result += "Style: \(style.capitalized)\n"
         }
         
-        if !season.isEmpty && season != "Not detected" {
+        if !season.isEmpty && season != "Not detected" && season != "null" {
             result += "Season: \(season.capitalized)\n"
         }
         
-        if !occasion.isEmpty && occasion != "Not detected" {
+        if !occasion.isEmpty && occasion != "Not detected" && occasion != "null" {
             result += "Occasion: \(occasion.capitalized)\n"
         }
         
-        if !fit.isEmpty && fit != "Not detected" {
+        if !fit.isEmpty && fit != "Not detected" && fit != "null" {
             result += "Fit: \(fit.capitalized)\n"
         }
         
-        if !brand.isEmpty && brand != "Not detected" {
+        if !brand.isEmpty && brand != "Not detected" && brand != "null" {
             result += "Brand: \(brand)\n"
         }
         
@@ -166,7 +300,7 @@ struct ClothingAttributes: Codable {
     
     /// Get the primary color from the main colors array
     var primaryColor: Color {
-        if let firstColor = mainColors.first {
+        if let firstColor = mainColors.first, firstColor != "null" && firstColor != "Not detected" {
             return colorFromString(firstColor)
         }
         return .gray
@@ -174,7 +308,7 @@ struct ClothingAttributes: Codable {
     
     /// Get the secondary color from the secondary colors array
     var secondaryColor: Color {
-        if let firstColor = secondaryColors.first, firstColor != "Not detected" {
+        if let firstColor = secondaryColors.first, firstColor != "Not detected" && firstColor != "null" {
             return colorFromString(firstColor)
         }
         return .clear
@@ -189,10 +323,11 @@ struct ClothingItem: Identifiable, Codable {
     var dateAdded: Date
     
     enum CodingKeys: String, CodingKey {
-        case id = "clothing_item_id"
-        case attributes = "attributes"
+        case id
+        case attributes
         case imageUrl = "image_url"
-        // dateAdded is not in the API response, so we don't include it in CodingKeys
+        case dateAdded = "created_at"
+        case userId = "user_id"
     }
     
     init(id: String = UUID().uuidString, 
@@ -205,17 +340,75 @@ struct ClothingItem: Identifiable, Codable {
         self.dateAdded = dateAdded
     }
     
-    // Custom init from decoder to handle the missing dateAdded field
+    // Custom init from decoder to handle the date format from the API
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        // Decode the properties from the container
-        id = try container.decode(String.self, forKey: .id)
-        attributes = try container.decode(ClothingAttributes.self, forKey: .attributes)
-        imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
+        // Decode the properties from the container with error handling
+        do {
+            id = try container.decode(String.self, forKey: .id)
+        } catch {
+            print("Error decoding id: \(error)")
+            id = UUID().uuidString // Generate a fallback ID
+        }
         
-        // Set dateAdded to current date since it's not in the API response
-        dateAdded = Date()
+        do {
+            attributes = try container.decode(ClothingAttributes.self, forKey: .attributes)
+        } catch {
+            print("Error decoding attributes: \(error)")
+            attributes = ClothingAttributes() // Use empty attributes as fallback
+        }
+        
+        do {
+            imageUrl = try container.decodeIfPresent(String.self, forKey: .imageUrl)
+        } catch {
+            print("Error decoding imageUrl: \(error)")
+            imageUrl = nil
+        }
+        
+        // Parse the created_at date string with error handling
+        do {
+            let dateString = try container.decode(String.self, forKey: .dateAdded)
+            
+            // Create a date formatter for ISO 8601 format with fractional seconds and timezone
+            let dateFormatter = ISO8601DateFormatter()
+            dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            
+            if let date = dateFormatter.date(from: dateString) {
+                dateAdded = date
+            } else {
+                // Try alternative date formats if the first one fails
+                let alternativeFormatter = DateFormatter()
+                alternativeFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZ"
+                
+                if let date = alternativeFormatter.date(from: dateString) {
+                    dateAdded = date
+                } else {
+                    print("⚠️ Could not parse date: \(dateString)")
+                    dateAdded = Date() // Fallback to current date
+                }
+            }
+        } catch {
+            print("Error decoding dateAdded: \(error)")
+            dateAdded = Date() // Fallback to current date
+        }
+        
+        // We don't need to do anything with userId, but we could store it if needed
+    }
+    
+    // Custom encode method to match the API format
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(attributes, forKey: .attributes)
+        try container.encodeIfPresent(imageUrl, forKey: .imageUrl)
+        
+        // Format the date as ISO 8601 string
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let dateString = dateFormatter.string(from: dateAdded)
+        try container.encode(dateString, forKey: .dateAdded)
     }
     
     // Generate a name based on attributes

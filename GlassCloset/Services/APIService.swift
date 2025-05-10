@@ -260,13 +260,45 @@ class APIService {
             
             // Parse the response
             do {
-                // Try to parse as an array of ClothingItem
-                let clothingItems = try JSONDecoder().decode([ClothingItem].self, from: data)
-                completion(.success(clothingItems))
-                print("✅ Successfully fetched \(clothingItems.count) clothing items")
-            } catch {
-                print("JSON Decoding Error: \(error)")
+                // Print the raw JSON for debugging
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Raw JSON response: \(jsonString)")
+                }
+                
+                // Create a decoder with custom date decoding strategy
+                let decoder = JSONDecoder()
+                
+                // Try to parse using the wrapper model
+                let response = try decoder.decode(ClothingItemResponse.self, from: data)
+                completion(.success(response.clothingItems))
+                print("✅ Successfully fetched \(response.clothingItems.count) clothing items")
+            } catch let decodingError as DecodingError {
+                // More detailed error for decoding issues
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("Key not found: \(key), context: \(context.debugDescription)")
+                case .typeMismatch(let type, let context):
+                    print("Type mismatch: \(type), context: \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("Value not found: \(type), context: \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("Data corrupted: \(context.debugDescription)")
+                @unknown default:
+                    print("Unknown decoding error: \(decodingError)")
+                }
+                
                 // Try to get the raw response as string for debugging
+                let responseString = String(data: data, encoding: .utf8) ?? "Could not decode response"
+                print("Raw response: \(responseString)")
+                
+                // Try to decode as a dictionary for more debugging info
+                if let jsonObject = try? JSONSerialization.jsonObject(with: data) {
+                    print("JSON structure: \(jsonObject)")
+                }
+                
+                completion(.failure(APIError.decodingFailed))
+            } catch {
+                print("Other error during decoding: \(error)")
                 let responseString = String(data: data, encoding: .utf8) ?? "Could not decode response"
                 print("Raw response: \(responseString)")
                 completion(.failure(APIError.decodingFailed))
