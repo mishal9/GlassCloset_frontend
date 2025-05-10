@@ -6,8 +6,12 @@ class ScanClothingViewModel: ObservableObject {
     @Published var isProcessing = false
     @Published var isAnalyzingWithAPI = false
     @Published var savedImage: UIImage? = nil
-    @Published var clothingAttributes: String = ""
+    @Published var clothingAttributes: ClothingAttributes = ClothingAttributes()
     @Published var apiError: String = ""
+    @Published var needsAuthentication = false
+    
+    // Reference to auth service
+    private let authService = AuthService.shared
     
     // Track the original captured image for reference
     private var originalCapturedImage: UIImage? = nil
@@ -27,13 +31,13 @@ class ScanClothingViewModel: ObservableObject {
         let orientedImage = fixOrientation(capturedImage)
         
         // Start processing
-        DispatchQueue.main.async {
+        DispatchQueue.main.async(execute: DispatchWorkItem(block: {
             self.isProcessing = true
-            self.clothingAttributes = ""
+            self.clothingAttributes = ClothingAttributes()
             self.apiError = ""
             // Show the original image immediately
             self.savedImage = orientedImage
-        }
+        }))
         
         // Send the image to the backend API for analysis
         analyzeImageWithBackendAPI(orientedImage)
@@ -60,24 +64,44 @@ class ScanClothingViewModel: ObservableObject {
     
     /// Analyze the image using the backend API
     private func analyzeImageWithBackendAPI(_ image: UIImage) {
-        DispatchQueue.main.async {
-            self.isAnalyzingWithAPI = true
+        // Ensure user is authenticated before making API request
+        guard authService.isAuthenticated, authService.getAuthToken() != nil else {
+            DispatchQueue.main.async(execute: DispatchWorkItem(block: {
+                self.apiError = "Please log in to analyze clothing items"
+                self.isProcessing = false
+                self.needsAuthentication = true
+            }))
+            return
         }
         
+        DispatchQueue.main.async(execute: DispatchWorkItem(block: {
+            self.isAnalyzingWithAPI = true
+        }))
+        
         APIService.shared.analyzeImage(image) { result in
-            DispatchQueue.main.async {
+            DispatchQueue.main.async(execute: DispatchWorkItem(block: {
                 self.isAnalyzingWithAPI = false
                 self.isProcessing = false
                 
                 switch result {
-                case .success(let analysisResult):
-                    print("✅ API Analysis successful: \(analysisResult)")
-                    self.clothingAttributes = analysisResult
+                case .success(let attributes):
+                    print("✅ API Analysis successful: \(attributes)")
+                    // Set the clothing attributes directly
+                    self.clothingAttributes = attributes
                 case .failure(let error):
                     print("❌ API Analysis failed: \(error.localizedDescription)")
                     self.apiError = error.localizedDescription
+                    
+                    // Check if the error is authentication-related
+                    if let apiError = error as? APIError, apiError == .authenticationRequired {
+                        self.needsAuthentication = true
+                    }
                 }
-            }
+            }))
         }
     }
+    
+    // MARK: - Helper Methods
+    
+    // Helper methods can be added here as needed
 }
