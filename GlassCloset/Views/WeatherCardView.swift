@@ -28,8 +28,11 @@ struct WeatherCardView: View {
                 placeholderView
             }
         }
-        .glassCard(cornerRadius: GlassDesignSystem.Radius.xl)
-        .floatingEffect(intensity: 0.5)
+        .background(
+            RoundedRectangle(cornerRadius: GlassDesignSystem.Radius.xl)
+                .fill(Color.gray.opacity(0.4)) // Lighter gray semi-transparent background
+                .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        )
         .padding(.horizontal, GlassDesignSystem.Spacing.md)
         .onAppear {
             // Request weather update when the view appears
@@ -101,48 +104,74 @@ struct WeatherCardView: View {
     // Weather content view when data is available
     private func weatherContentView(weatherData: WeatherData) -> some View {
         VStack(spacing: GlassDesignSystem.Spacing.sm) {
+            // Main weather info row
             HStack(alignment: .center, spacing: GlassDesignSystem.Spacing.md) {
+                // Weather icon on the left
                 Image(systemName: viewModel.weatherIcon(for: weatherData.condition))
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(getIconColor(for: weatherData.condition), colorScheme == .dark ? Color.white : Color.white)
+                    .foregroundStyle(getIconColor(for: weatherData.condition), .white)
                     .font(.system(size: 30))
+                    .frame(width: 40)
                 
-                VStack(alignment: .leading, spacing: GlassDesignSystem.Spacing.xxs) {
+                // Temperature and feels like in the center
+                VStack(alignment: .leading, spacing: 0) {
                     Text(weatherData.temperatureString)
-                        .font(GlassDesignSystem.Typography.title3)
-                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundColor(.white)
+                    
                     Text(weatherData.feelsLikeString)
-                        .font(GlassDesignSystem.Typography.bodySmall)
-                        .foregroundColor(colorScheme == .dark ? .white.opacity(0.8) : .black.opacity(0.7))
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.white.opacity(0.9))
                 }
                 
                 Spacer()
                 
+                // Location on the right
                 Text(weatherData.location)
-                    .font(GlassDesignSystem.Typography.bodyMedium)
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white)
             }
             
-            // Additional weather details
+            // Additional weather details row
             HStack(spacing: GlassDesignSystem.Spacing.lg) {
-                weatherDetailItem(icon: "humidity.fill", value: String(format: "%.0f%%", weatherData.humidity))
-                weatherDetailItem(icon: "wind", value: String(format: "%.1f km/h", weatherData.windSpeed))
+                // Humidity with icon
+                HStack(spacing: 4) {
+                    Image(systemName: "humidity.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.9))
+                    
+                    Text(String(format: "%.0f%%", weatherData.humidity))
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+                
+                // Wind speed with icon
+                HStack(spacing: 4) {
+                    Image(systemName: "wind")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.9))
+                    
+                    Text(String(format: "%.1f km/h", weatherData.windSpeed))
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(.white.opacity(0.9))
+                }
                 
                 Spacer()
                 
+                // Outfit tips button
                 Button(action: {
                     showingRecommendations = true
                 }) {
                     Text("Outfit Tips")
-                        .font(GlassDesignSystem.Typography.bodySmall)
-                        .foregroundColor(colorScheme == .dark ? .white : .black)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white)
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, GlassDesignSystem.Spacing.md)
-            .padding(.bottom, GlassDesignSystem.Spacing.sm)
+            .padding(.top, 4)
         }
-        .padding(.top, GlassDesignSystem.Spacing.md)
+        .padding(.horizontal, GlassDesignSystem.Spacing.md)
+        .padding(.vertical, GlassDesignSystem.Spacing.sm)
     }
     
     // Weather detail item (humidity, wind, etc.)
@@ -150,11 +179,11 @@ struct WeatherCardView: View {
         HStack(spacing: GlassDesignSystem.Spacing.xxs) {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundColor(colorScheme == .dark ? .white.opacity(0.7) : .black.opacity(0.7))
+                .foregroundColor(.white.opacity(0.7))
             
             Text(value)
                 .font(GlassDesignSystem.Typography.bodySmall)
-                .foregroundColor(colorScheme == .dark ? .white.opacity(0.7) : .black.opacity(0.7))
+                .foregroundColor(.white.opacity(0.7))
         }
     }
     
