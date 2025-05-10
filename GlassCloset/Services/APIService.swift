@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Network
 
 class APIService {
     
@@ -16,7 +17,45 @@ class APIService {
     // Singleton instance
     static let shared = APIService()
     
-    private init() {}
+    // Network path monitor to check connectivity
+    private let networkMonitor = NWPathMonitor()
+    private var isConnected = false
+    
+    // Custom URLSession with better timeout handling
+    private lazy var session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForResource = 60 // Increased timeout for image analysis
+        config.timeoutIntervalForRequest = 60 // Increased request timeout
+        config.waitsForConnectivity = true // Wait for connectivity
+        return URLSession(configuration: config)
+    }()
+    
+    private init() {
+        setupNetworkMonitoring()
+    }
+    
+    private func setupNetworkMonitoring() {
+        let queue = DispatchQueue(label: "NetworkMonitor")
+        networkMonitor.pathUpdateHandler = { [weak self] path in
+            self?.isConnected = path.status == .satisfied
+            print("🌐 Network status: \(path.status == .satisfied ? "Connected" : "Disconnected")")
+            
+            // Log more detailed information about the path
+            if path.status == .satisfied {
+                print("🌐 Network connected")
+                print("🌐 Is expensive: \(path.isExpensive)")
+                print("🌐 Supports DNS: \(path.supportsDNS)")
+                print("🌐 Supports IPv4: \(path.supportsIPv4)")
+                print("🌐 Supports IPv6: \(path.supportsIPv6)")
+            } else {
+                print("🌐 Network unavailable")
+                if #available(iOS 15.0, *) {
+                    print("🌐 Network unavailable reason: \(path.unsatisfiedReason)")
+                }
+            }
+        }
+        networkMonitor.start(queue: queue)
+    }
     
     // MARK: - Authentication
     
@@ -33,7 +72,18 @@ class APIService {
     /// - Parameters:
     ///   - image: The UIImage to analyze
     ///   - completion: Callback with the analysis result or error
-    func analyzeImage(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
+    func analyzeImage(_ image: UIImage, completion: @escaping (Result<ClothingAttributes, Error>) -> Void) {
+        tryAnalyzeImage(image, baseURL: baseURL) { result in
+            completion(result)
+        }
+    }
+    
+    /// Helper method to try analyzing an image with a specific base URL
+    /// - Parameters:
+    ///   - image: The UIImage to analyze
+    ///   - baseURL: The base URL to use
+    ///   - completion: Callback with the analysis result or error
+    private func tryAnalyzeImage(_ image: UIImage, baseURL: String, completion: @escaping (Result<ClothingAttributes, Error>) -> Void) {
         // Endpoint for image analysis from Constants
         let endpoint = Constants.API.analyzeImage
         guard let url = URL(string: baseURL + endpoint) else {
@@ -83,8 +133,15 @@ class APIService {
         // Set the request body
         request.httpBody = body
         
-        // Create and start the task
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        // Check network connectivity first
+        guard isConnected else {
+            print("⚠️ No network connection available")
+            completion(.failure(APIError.noNetworkConnection))
+            return
+        }
+        
+        // Create and start the task with our custom session
+        let task = self.session.dataTask(with: request) { data, response, error in
             // Handle network error
             if let error = error {
                 completion(.failure(error))
@@ -111,8 +168,26 @@ class APIService {
             
             // Parse the response
             do {
+                // Try to parse as an AnalysisResponse
                 let responseObject = try JSONDecoder().decode(AnalysisResponse.self, from: data)
-                completion(.success(responseObject.analysis))
+                
+                // Extract the attributes from the response
+                var attributes = responseObject.attributes
+                
+                // Add the ID and image URL to the attributes for convenience
+                attributes.id = responseObject.clothingItemId
+                attributes.imageUrl = responseObject.imageUrl
+                
+                // Return the attributes
+                completion(.success(attributes))
+                
+                // Log success
+                print("✅ Successfully parsed clothing attributes: \(attributes)")
+                print("🖼️ Image URL: \(responseObject.imageUrl)")
+                print("🔑 Item ID: \(responseObject.clothingItemId)")
+                
+                // Log the raw analysis string for debugging
+                print("📝 Raw analysis: \(responseObject.analysis)")
             } catch {
                 print("JSON Decoding Error: \(error)")
                 // Try to get the raw response as string for debugging
@@ -124,12 +199,22 @@ class APIService {
         
         task.resume()
     }
-}
+}    
 
 // MARK: - Response Models
 
 struct AnalysisResponse: Codable {
     let analysis: String
+    let attributes: ClothingAttributes
+    let clothingItemId: String
+    let imageUrl: String
+    
+    enum CodingKeys: String, CodingKey {
+        case analysis
+        case attributes
+        case clothingItemId = "clothing_item_id"
+        case imageUrl = "image_url"
+    }
 }
 
 // MARK: - Error Types
@@ -142,6 +227,7 @@ enum APIError: Error, LocalizedError, Equatable {
     case noData
     case decodingFailed
     case authenticationRequired
+    case noNetworkConnection
     
     var errorDescription: String? {
         switch self {
@@ -159,6 +245,8 @@ enum APIError: Error, LocalizedError, Equatable {
             return "Failed to decode response"
         case .authenticationRequired:
             return "Authentication required - please log in"
+        case .noNetworkConnection:
+            return "No network connection available"
         }
     }
     
@@ -166,11 +254,12 @@ enum APIError: Error, LocalizedError, Equatable {
     static func == (lhs: APIError, rhs: APIError) -> Bool {
         switch (lhs, rhs) {
         case (.invalidURL, .invalidURL),
-             (.imageConversionFailed, .imageConversionFailed),
-             (.invalidResponse, .invalidResponse),
-             (.noData, .noData),
-             (.decodingFailed, .decodingFailed),
-             (.authenticationRequired, .authenticationRequired):
+            (.imageConversionFailed, .imageConversionFailed),
+            (.invalidResponse, .invalidResponse),
+            (.noData, .noData),
+            (.decodingFailed, .decodingFailed),
+            (.authenticationRequired, .authenticationRequired),
+            (.noNetworkConnection, .noNetworkConnection):
             return true
         case (.serverError(let lhsCode), .serverError(let rhsCode)):
             return lhsCode == rhsCode

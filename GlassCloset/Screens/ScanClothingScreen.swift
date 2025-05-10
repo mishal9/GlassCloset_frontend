@@ -52,10 +52,73 @@ struct ScanClothingScreen: View {
                         }
                         
                         if showAttributes {
-                            Text(viewModel.clothingAttributes)
-                                .font(GlassDesignSystem.Typography.bodyMedium)
-                                .foregroundColor(GlassDesignSystem.Colors.textSecondary(in: colorScheme))
+                            // Color chips for main colors
+                            if !viewModel.clothingAttributes.mainColors.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Colors")
+                                        .font(GlassDesignSystem.Typography.captionBold)
+                                        .foregroundColor(GlassDesignSystem.Colors.textSecondary(in: colorScheme))
+                                    
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 8) {
+                                            ForEach(viewModel.clothingAttributes.mainColors, id: \.self) { color in
+                                                ColorChip(colorName: color, attributes: viewModel.clothingAttributes)
+                                            }
+                                            
+                                            // Add secondary colors if available
+                                            ForEach(viewModel.clothingAttributes.secondaryColors.filter { $0 != "Not detected" }, id: \.self) { color in
+                                                ColorChip(colorName: color, attributes: viewModel.clothingAttributes)
+                                                    .opacity(0.7) // Slightly dimmed to indicate secondary
+                                            }
+                                        }
+                                    }
+                                }
                                 .padding(.top, GlassDesignSystem.Spacing.xs)
+                            }
+                            
+                            // Attribute grid
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                                // Type
+                                if !viewModel.clothingAttributes.garmentType.isEmpty && viewModel.clothingAttributes.garmentType != "Not detected" {
+                                    AttributeRow(icon: "tshirt", title: "Type", value: viewModel.clothingAttributes.garmentType.capitalized)
+                                }
+                                
+                                // Material
+                                if !viewModel.clothingAttributes.material.isEmpty && viewModel.clothingAttributes.material != "Not detected" {
+                                    AttributeRow(icon: "square.grid.3x3", title: "Material", value: viewModel.clothingAttributes.material.capitalized)
+                                }
+                                
+                                // Pattern
+                                if !viewModel.clothingAttributes.pattern.isEmpty && viewModel.clothingAttributes.pattern != "Not detected" {
+                                    AttributeRow(icon: "square.on.circle", title: "Pattern", value: viewModel.clothingAttributes.pattern.capitalized)
+                                }
+                                
+                                // Style
+                                if !viewModel.clothingAttributes.style.isEmpty && viewModel.clothingAttributes.style != "Not detected" {
+                                    AttributeRow(icon: "person.crop.square", title: "Style", value: viewModel.clothingAttributes.style.capitalized)
+                                }
+                                
+                                // Season
+                                if !viewModel.clothingAttributes.season.isEmpty && viewModel.clothingAttributes.season != "Not detected" {
+                                    AttributeRow(icon: "sun.max", title: "Season", value: viewModel.clothingAttributes.season.capitalized)
+                                }
+                                
+                                // Occasion
+                                if !viewModel.clothingAttributes.occasion.isEmpty && viewModel.clothingAttributes.occasion != "Not detected" {
+                                    AttributeRow(icon: "calendar", title: "Occasion", value: viewModel.clothingAttributes.occasion.capitalized)
+                                }
+                                
+                                // Fit
+                                if !viewModel.clothingAttributes.fit.isEmpty && viewModel.clothingAttributes.fit != "Not detected" {
+                                    AttributeRow(icon: "ruler", title: "Fit", value: viewModel.clothingAttributes.fit.capitalized)
+                                }
+                                
+                                // Brand
+                                if !viewModel.clothingAttributes.brand.isEmpty && viewModel.clothingAttributes.brand != "Not detected" {
+                                    AttributeRow(icon: "tag", title: "Brand", value: viewModel.clothingAttributes.brand)
+                                }
+                            }
+                            .padding(.top, GlassDesignSystem.Spacing.sm)
                         }
                     }
                     .padding(GlassDesignSystem.Spacing.md)
